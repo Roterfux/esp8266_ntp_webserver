@@ -116,8 +116,8 @@ def main():
     while True:
         if utime.time() > now + 5000:
             now = utime.time()
-        rtc = machine.RTC()
-        print(rtc.datetime())
+            rtc = machine.RTC()
+            print(rtc.datetime())
         web_server(s)
 
 
