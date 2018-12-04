@@ -1,4 +1,7 @@
-# esp8266_ntp_webserver
+# esp8266MOD_ntp_web-server
+
+Very early/buggy version
+
 + Connect to WiFi
 + LED support
 + NTP time sync
