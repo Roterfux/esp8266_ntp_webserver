@@ -2,19 +2,19 @@ import utime
 import machine
 try:
     import usocket as socket
-except:
+except ImportError:
     import socket
 try:
     import ustruct as struct
-except:
+except ImportError:
     import struct
 
 
-addr      = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
+ADDR      = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
 # (date(2000, 1, 1) - date(1900, 1, 1)).days * 24*60*60
-NTP_DELTA = 3155673600
+NTP_DELTA = 3155673600 + 7200
 host      = "pool.ntp.org"
-led       = machine.Pin(2, machine.Pin.OUT)
+LED       = machine.Pin(2, machine.Pin.OUT)
 
 
 def get_time():
@@ -36,26 +36,23 @@ def time_delta():
 
 # There's currently no timezone support in MicroPython, so
 # utime.localtime() will return UTC time (as if it was .gmtime())
-def settime():
+def set_time():
     t = time_delta()
-    import machine
-    import utime
     tm = utime.localtime(t)
     tm = tm[0:3] + (0,) + tm[3:6] + (0,)
     machine.RTC().datetime(tm)
 
 
-def init_web():
+def init_web(ip):
     s = socket.socket()
-    s.bind(addr)
+    s.bind(ADDR)
     s.listen(1)
-    print('listening on', addr)
+    print('listening on', ip, ":", ADDR[1])
     return s
 
 
-def web_server(s):
-    led.on()
-    pins = [machine.Pin(i, machine.Pin.IN) for i in (0, 2, 4, 5, 12, 13, 14, 15)]
+def web_server(s, pins):
+    LED.on()
     html = """
     <!DOCTYPE html>
     <html>
@@ -68,8 +65,8 @@ def web_server(s):
     </html>
      """.format(utime.localtime())
 
-    cl, addr = s.accept()
-    print('client connected from', addr)
+    cl, ADDR = s.accept()
+    print('client connected from', ADDR)
     cl_file = cl.makefile('rwb', 0)
     while True:
         line = cl_file.readline()
@@ -79,12 +76,13 @@ def web_server(s):
     response = html % '\n'.join(rows)
     cl.send(response)
     cl.close()
-    led.off()
+    LED.off()
 
 
 def do_connect():
     import network
-    import time
+
+    LED.on()
     sta_if = network.WLAN(network.STA_IF)
     if not sta_if.isconnected():
         print('connecting to network...')
@@ -92,8 +90,11 @@ def do_connect():
         sta_if.connect('Fuxbau', 'JuV30062013')
         while not sta_if.isconnected():
             print(".", end="")
-            time.sleep(.3)
-    print('network config:', sta_if.ifconfig())
+            utime.sleep_ms(300)
+    ips = sta_if.ifconfig()
+    print('network config:', ips)
+    LED.off()
+    return ips[0]
 
 
 def set_device_time(new_time):
@@ -103,19 +104,23 @@ def set_device_time(new_time):
 
 
 def manage_time():
-    settime()
+    set_time()
     print("New device time: {}".format(utime.localtime()))
     set_device_time(utime.localtime())
 
 
 def main():
-    do_connect()
+    ip = do_connect()
     manage_time()
-    s   = init_web()
+    s    = init_web(ip)
+    pins = [machine.Pin(i, machine.Pin.IN) for i in (0, 2, 4, 5, 12, 13, 14, 15)]
     while True:
-        print(utime.time())
-        web_server(s)
+        print(utime.localtime(utime.time()))
+        web_server(s, pins)
+        utime.sleep_ms(100)
 
 
 if __name__ == '__main__':
     main()
+
+# EndOfLol

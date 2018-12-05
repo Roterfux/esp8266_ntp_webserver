@@ -1,7 +1,6 @@
 # esp8266MOD_ntp_web-server
 
-Very early/buggy version
-
++ MicroPython
 + Connect to WiFi
 + LED support
 + NTP time sync
