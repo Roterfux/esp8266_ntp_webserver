@@ -89,10 +89,10 @@ def do_connect():
     if not sta_if.isconnected():
         print('connecting to network...')
         sta_if.active(True)
-        sta_if.connect('-', '-')
+        sta_if.connect('Fuxbau', 'JuV30062013')
         while not sta_if.isconnected():
             print(".", end="")
-            time.sleep(.25)
+            time.sleep(.3)
     print('network config:', sta_if.ifconfig())
 
 
@@ -112,13 +112,8 @@ def main():
     do_connect()
     manage_time()
     s   = init_web()
-    now = utime.time()
-    rtc = machine.RTC()
     while True:
-        if utime.time() > now + 5000:
-            now = utime.time()
-            rtc = machine.RTC()
-        print(rtc.datetime())
+        print(utime.time())
         web_server(s)
 
 
